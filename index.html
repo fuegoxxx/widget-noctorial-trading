@@ -35,11 +35,23 @@
             margin-bottom: 5px;
             font-weight: 600;
         }
-        input[type="number"] {
-            width: calc(100% - 10px);
-            padding: 8px;
+        input[type="number"], button {
+            width: calc(100% - 20px);
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        button {
+            background-color: #2e83f2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1e63c0;
         }
         #results {
             margin-top: 20px;
@@ -63,62 +75,79 @@
         .status.error {
             color: #dc3545; /* Rojo para 'fuera de rango' */
         }
+        #storage-info {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Analizador de Consistencia de Lotes</h2>
-
-        <div class="input-group">
-            <label for="num-ops">Número de operaciones:</label>
-            <input type="number" id="num-ops" value="10">
-        </div>
-
-        <div class="input-group">
-            <label for="sum-lots">Suma de Lotes:</label>
-            <input type="number" id="sum-lots" value="1.5">
-        </div>
+        <p>Introduce el lote de tu nueva operación para saber si está en el rango correcto. La aplicación recordará tus totales automáticamente.</p>
 
         <div class="input-group">
             <label for="current-lot">Lote de la operación actual:</label>
-            <input type="number" id="current-lot" placeholder="Introduce el lote de tu nueva operación...">
+            <input type="number" id="current-lot" placeholder="Ej. 0.5" step="0.01">
         </div>
+
+        <button id="add-lot">Agregar Lote y Actualizar</button>
 
         <div id="results">
             </div>
+
+        <div id="storage-info">
+            <p><strong>Totales guardados:</strong></p>
+            <p>Operaciones: <span id="num-ops-display">0</span></p>
+            <p>Suma de Lotes: <span id="sum-lots-display">0</span></p>
+            <button id="reset-data" style="width: auto; padding: 5px 10px;">Reiniciar datos</button>
+        </div>
     </div>
 
     <script>
-        const numOpsInput = document.getElementById('num-ops');
-        const sumLotsInput = document.getElementById('sum-lots');
         const currentLotInput = document.getElementById('current-lot');
+        const addLotButton = document.getElementById('add-lot');
+        const resetDataButton = document.getElementById('reset-data');
         const resultsDiv = document.getElementById('results');
+        const numOpsDisplay = document.getElementById('num-ops-display');
+        const sumLotsDisplay = document.getElementById('sum-lots-display');
 
-        function updateResults() {
-            const numOps = parseFloat(numOpsInput.value) || 0;
-            const sumLots = parseFloat(sumLotsInput.value) || 0;
-            const currentLot = parseFloat(currentLotInput.value);
+        // Función para cargar datos desde el almacenamiento local
+        function loadData() {
+            let numOps = parseFloat(localStorage.getItem('numOps')) || 0;
+            let sumLots = parseFloat(localStorage.getItem('sumLots')) || 0;
+            updateDisplay(numOps, sumLots);
+            return { numOps, sumLots };
+        }
 
-            if (isNaN(currentLot)) {
-                resultsDiv.innerHTML = '<p>Introduce un valor para el lote actual.</p>';
-                return;
-            }
+        // Función para guardar datos en el almacenamiento local
+        function saveData(numOps, sumLots) {
+            localStorage.setItem('numOps', numOps);
+            localStorage.setItem('sumLots', sumLots);
+            updateDisplay(numOps, sumLots);
+        }
 
+        // Función para actualizar la visualización de los totales
+        function updateDisplay(numOps, sumLots) {
+            numOpsDisplay.textContent = numOps;
+            sumLotsDisplay.textContent = sumLots.toFixed(2);
+        }
+
+        // Función para calcular y mostrar los resultados
+        function updateResults(numOps, sumLots, currentLot) {
             const avgLots = numOps > 0 ? sumLots / numOps : 0;
             const minAllowed = avgLots / 2;
             const maxAllowed = avgLots * 2;
-            let statusClass = 'warning';
-            let statusText = 'Lote muy bajo o muy alto';
+            let statusClass = '';
+            let statusText = '';
 
             if (currentLot >= minAllowed && currentLot <= maxAllowed) {
                 statusClass = 'ok';
                 statusText = '🟢 ¡Lote en rango!';
-            } else if (currentLot < minAllowed) {
-                statusClass = 'error';
-                statusText = '🔴 Lote muy bajo';
             } else {
                 statusClass = 'error';
-                statusText = '🔴 Lote muy alto';
+                statusText = '🔴 ¡Lote fuera de rango!';
             }
 
             resultsDiv.innerHTML = `
@@ -141,12 +170,35 @@
             `;
         }
 
-        numOpsInput.addEventListener('input', updateResults);
-        sumLotsInput.addEventListener('input', updateResults);
-        currentLotInput.addEventListener('input', updateResults);
+        // Evento al hacer clic en "Agregar Lote y Actualizar"
+        addLotButton.addEventListener('click', () => {
+            const currentLot = parseFloat(currentLotInput.value);
+            if (isNaN(currentLot) || currentLot <= 0) {
+                alert('Por favor, introduce un lote válido.');
+                return;
+            }
 
-        // Actualizar los resultados al cargar la página
-        updateResults();
+            let { numOps, sumLots } = loadData();
+            updateResults(numOps, sumLots, currentLot);
+
+            // Actualizamos los totales para la próxima operación
+            numOps += 1;
+            sumLots += currentLot;
+            saveData(numOps, sumLots);
+
+            currentLotInput.value = ''; // Limpiamos el campo de entrada
+        });
+
+        // Evento al hacer clic en "Reiniciar datos"
+        resetDataButton.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres reiniciar todos los datos? Esto no se puede deshacer.')) {
+                saveData(0, 0);
+                resultsDiv.innerHTML = '';
+            }
+        });
+
+        // Cargar los datos al iniciar la página
+        loadData();
     </script>
 </body>
 </html>
