@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Operaciones Noctorial</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f6f5f4; /* Fondo de Notion */
+            color: #37352f; /* Texto de Notion */
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(15, 15, 15, 0.1);
+        }
+        h2 {
+            font-size: 1.5em;
+            color: #37352f;
+            border-bottom: 2px solid #37352f;
+            padding-bottom: 5px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="number"] {
+            width: calc(100% - 10px);
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .status.ok {
+            color: #28a745; /* Verde para 'en rango' */
+        }
+        .status.warning {
+            color: #ffc107; /* Amarillo para precaución */
+        }
+        .status.error {
+            color: #dc3545; /* Rojo para 'fuera de rango' */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Analizador de Consistencia de Lotes</h2>
+
+        <div class="input-group">
+            <label for="num-ops">Número de operaciones:</label>
+            <input type="number" id="num-ops" value="10">
+        </div>
+
+        <div class="input-group">
+            <label for="sum-lots">Suma de Lotes:</label>
+            <input type="number" id="sum-lots" value="1.5">
+        </div>
+
+        <div class="input-group">
+            <label for="current-lot">Lote de la operación actual:</label>
+            <input type="number" id="current-lot" placeholder="Introduce el lote de tu nueva operación...">
+        </div>
+
+        <div id="results">
+            </div>
+    </div>
+
+    <script>
+        const numOpsInput = document.getElementById('num-ops');
+        const sumLotsInput = document.getElementById('sum-lots');
+        const currentLotInput = document.getElementById('current-lot');
+        const resultsDiv = document.getElementById('results');
+
+        function updateResults() {
+            const numOps = parseFloat(numOpsInput.value) || 0;
+            const sumLots = parseFloat(sumLotsInput.value) || 0;
+            const currentLot = parseFloat(currentLotInput.value);
+
+            if (isNaN(currentLot)) {
+                resultsDiv.innerHTML = '<p>Introduce un valor para el lote actual.</p>';
+                return;
+            }
+
+            const avgLots = numOps > 0 ? sumLots / numOps : 0;
+            const minAllowed = avgLots / 2;
+            const maxAllowed = avgLots * 2;
+            let statusClass = 'warning';
+            let statusText = 'Lote muy bajo o muy alto';
+
+            if (currentLot >= minAllowed && currentLot <= maxAllowed) {
+                statusClass = 'ok';
+                statusText = '🟢 ¡Lote en rango!';
+            } else if (currentLot < minAllowed) {
+                statusClass = 'error';
+                statusText = '🔴 Lote muy bajo';
+            } else {
+                statusClass = 'error';
+                statusText = '🔴 Lote muy alto';
+            }
+
+            resultsDiv.innerHTML = `
+                <h2>Análisis</h2>
+                <div class="result-item">
+                    <span>Lote Promedio:</span>
+                    <span>${avgLots.toFixed(2)}</span>
+                </div>
+                <div class="result-item">
+                    <span>Rango Mínimo:</span>
+                    <span>${minAllowed.toFixed(2)}</span>
+                </div>
+                <div class="result-item">
+                    <span>Rango Máximo:</span>
+                    <span>${maxAllowed.toFixed(2)}</span>
+                </div>
+                <div class="result-item">
+                    <span class="status ${statusClass}">${statusText}</span>
+                </div>
+            `;
+        }
+
+        numOpsInput.addEventListener('input', updateResults);
+        sumLotsInput.addEventListener('input', updateResults);
+        currentLotInput.addEventListener('input', updateResults);
+
+        // Actualizar los resultados al cargar la página
+        updateResults();
+    </script>
+</body>
+</html>
