@@ -1,3 +1,4 @@
+        
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -189,6 +190,35 @@
                 `;
             }
         }
+        
+        // Función para mostrar el análisis al cargar la página si hay datos guardados
+        function showLastAnalysis() {
+            const { numOps, sumLots } = loadData();
+            if (numOps > 0) {
+                const avgLots = sumLots / numOps;
+                const minAllowed = avgLots / 2;
+                const maxAllowed = avgLots * 2;
+                
+                resultsDiv.innerHTML = `
+                    <h2>Análisis Actual</h2>
+                    <div class="result-item">
+                        <span>Lote Promedio:</span>
+                        <span>${avgLots.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Rango Mínimo:</span>
+                        <span>${minAllowed.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Rango Máximo:</span>
+                        <span>${maxAllowed.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status ok">🟢 ¡Datos cargados!</span>
+                    </div>
+                `;
+            }
+        }
 
         // Evento al hacer clic en "Agregar Lote y Actualizar"
         addLotButton.addEventListener('click', () => {
@@ -217,8 +247,9 @@
             }
         });
 
-        // Cargar los datos al iniciar la página
-        loadData();
+        // Cargar los datos y mostrar el análisis al iniciar la página
+        showLastAnalysis();
+
     </script>
 </body>
 </html>
