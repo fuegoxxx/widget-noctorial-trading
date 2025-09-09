@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analizador de Operaciones Noctorial</title>
+    <title>Analizador de Consistencia de Lotes</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -95,7 +95,7 @@
         <button id="add-lot">Agregar Lote y Actualizar</button>
 
         <div id="results">
-            </div>
+        </div>
 
         <div id="storage-info">
             <p><strong>Totales guardados:</strong></p>
@@ -136,38 +136,58 @@
 
         // Función para calcular y mostrar los resultados
         function updateResults(numOps, sumLots, currentLot) {
-            const avgLots = numOps > 0 ? sumLots / numOps : 0;
-            const minAllowed = avgLots / 2;
-            const maxAllowed = avgLots * 2;
-            let statusClass = '';
-            let statusText = '';
-
-            if (currentLot >= minAllowed && currentLot <= maxAllowed) {
-                statusClass = 'ok';
-                statusText = '🟢 ¡Lote en rango!';
+            // Manejar el caso de la primera operación (numOps es 0)
+            if (numOps === 0) {
+                resultsDiv.innerHTML = `
+                    <h2>Análisis</h2>
+                    <div class="result-item">
+                        <span>Tu primera operación:</span>
+                        <span>${currentLot.toFixed(2)} lotes</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Estado:</span>
+                        <span class="status ok">🟢 ¡Operación inicial establecida!</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Rango inicial:</span>
+                        <span>Se establecerá entre ${ (currentLot / 2).toFixed(2) } y ${ (currentLot * 2).toFixed(2) }</span>
+                    </div>
+                `;
             } else {
-                statusClass = 'error';
-                statusText = '🔴 ¡Lote fuera de rango!';
-            }
+                // Lógica para operaciones subsiguientes
+                const avgLots = sumLots / numOps;
+                const minAllowed = avgLots / 2;
+                const maxAllowed = avgLots * 2;
+                let statusClass = '';
+                let statusText = '';
 
-            resultsDiv.innerHTML = `
-                <h2>Análisis</h2>
-                <div class="result-item">
-                    <span>Lote Promedio:</span>
-                    <span>${avgLots.toFixed(2)}</span>
-                </div>
-                <div class="result-item">
-                    <span>Rango Mínimo:</span>
-                    <span>${minAllowed.toFixed(2)}</span>
-                </div>
-                <div class="result-item">
-                    <span>Rango Máximo:</span>
-                    <span>${maxAllowed.toFixed(2)}</span>
-                </div>
-                <div class="result-item">
-                    <span class="status ${statusClass}">${statusText}</span>
-                </div>
-            `;
+                if (currentLot >= minAllowed && currentLot <= maxAllowed) {
+                    statusClass = 'ok';
+                    statusText = '🟢 ¡Lote en rango!';
+                } else {
+                    statusClass = 'error';
+                    statusText = '🔴 ¡Lote fuera de rango!';
+                }
+
+                resultsDiv.innerHTML = `
+                    <h2>Análisis</h2>
+                    <div class="result-item">
+                        <span>Lote Promedio:</span>
+                        <span>${avgLots.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Rango Mínimo:</span>
+                        <span>${minAllowed.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Rango Máximo:</span>
+                        <span>${maxAllowed.toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+            }
         }
 
         // Evento al hacer clic en "Agregar Lote y Actualizar"
