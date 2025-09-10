@@ -1,261 +1,624 @@
-        
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analizador de Consistencia de Lotes</title>
+    <title>Diario de Trading Multi-Cuenta</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 20px;
-            padding: 0;
-            background-color: #f6f5f4; /* Fondo de Notion */
-            color: #37352f; /* Texto de Notion */
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
             padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(15, 15, 15, 0.1);
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+        }
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .card {
+            background-color: #0f0f1b;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            height: fit-content;
+        }
+        .sidebar-container {
+            flex: 0 0 280px;
+        }
+        .content-container {
+            flex: 1;
+        }
+        h1 {
+            font-size: 2.2em;
+            color: #00bcd4;
+            border-bottom: 2px solid #00bcd4;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
         }
         h2 {
-            font-size: 1.5em;
-            color: #37352f;
-            border-bottom: 2px solid #37352f;
-            padding-bottom: 5px;
+            font-size: 1.6em;
+            color: #90caf9;
+            border-bottom: 1px solid #33334d;
+            padding-bottom: 8px;
+            margin-top: 25px;
+            margin-bottom: 20px;
         }
-        .input-group {
-            margin-bottom: 15px;
+        h3 {
+            font-size: 1.2em;
+            color: #bbdefb;
+            margin-top: 15px;
+            margin-bottom: 10px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 600;
+            color: #b0b0b0;
         }
-        input[type="number"], button {
-            width: calc(100% - 20px);
+        input[type="text"], input[type="number"], input[type="date"], button, select {
+            width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid #4a4a6b;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 1em;
+            margin-bottom: 15px;
+            background-color: #2e2e4a;
+            color: #e0e0e0;
         }
         button {
-            background-color: #2e83f2;
+            background-color: #00bcd4;
             color: white;
             border: none;
             cursor: pointer;
-            margin-top: 10px;
+            padding: 12px 20px;
+            font-size: 1em;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
         button:hover {
-            background-color: #1e63c0;
+            background-color: #00a4b8;
+            transform: translateY(-2px);
         }
-        #results {
-            margin-top: 20px;
+        button:active {
+            transform: translateY(0);
+        }
+
+        .metrics-container {
+            display: flex;
+            justify-content: space-around;
             padding: 15px;
-            border-radius: 6px;
+            background-color: #1c1c36;
+            border-radius: 8px;
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
-        .result-item {
+        .metric-item {
+            text-align: center;
+            flex: 1;
+            padding: 0 5px;
+        }
+        .metric-item span:first-child {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+        .metric-value.positive { color: #8bc34a; }
+        .metric-value.negative { color: #ef5350; }
+        .metric-value.neutral { color: #ffeb3b; }
+
+        #trade-form .column-flex {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        #trade-form .column-flex > div {
+            flex: 1 1 180px;
+        }
+        
+        #trade-log {
+            margin-top: 20px;
+        }
+        .trade-entry {
+            border: 1px solid #33334d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #1c1c36;
+        }
+        .trade-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #e0e0e0;
+        }
+        .trade-meta {
+            font-size: 0.9em;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+        .analysis-summary-item {
+            padding: 12px;
+            border: 1px solid #33334d;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #1c1c36;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .status {
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-        .status.ok {
-            color: #28a745; /* Verde para 'en rango' */
+        .status.ok { color: #8bc34a; }
+        .status.error { color: #ef5350; }
+        .status.neutral { color: #ffeb3b; }
+
+        #win-rate-progress-container {
+            width: 80px;
+            height: 12px;
+            background-color: #2e2e4a;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px auto 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
         }
-        .status.warning {
-            color: #ffc107; /* Amarillo para precaución */
+        #win-rate-progress {
+            height: 100%;
+            background-color: #00bcd4;
+            width: 0%;
+            transition: width 0.7s ease-out;
+            border-radius: 6px;
         }
-        .status.error {
-            color: #dc3545; /* Rojo para 'fuera de rango' */
-        }
-        #storage-info {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 15px;
+
+        @media (max-width: 768px) {
+            .main-wrapper {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .sidebar-container, .content-container {
+                flex: none;
+                width: 100%;
+            }
+            .card {
+                padding: 15px;
+            }
+            input[type="text"], input[type="number"], input[type="date"], button, select {
+                margin-bottom: 10px;
+            }
+            button {
+                padding: 10px 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+            h2 {
+                font-size: 1.3em;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+            .metrics-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .metric-item {
+                border-bottom: 1px solid #33334d;
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+            }
+            .metric-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+            #trade-form .column-flex {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Analizador de Consistencia de Lotes</h2>
-        <p>Introduce el lote de tu nueva operación para saber si está en el rango correcto. La aplicación recordará tus totales automáticamente.</p>
+    <div class="main-wrapper">
+        <div class="sidebar-container card">
+            <h2>Gestión de Cuentas 📊</h2>
+            <div>
+                <label for="account-name">Nombre:</label>
+                <input type="text" id="account-name" placeholder="Ej. Noctorial 5K">
+            </div>
+            <div>
+                <label for="account-balance">Balance Inicial:</label>
+                <input type="number" id="account-balance" placeholder="Ej. 5000" step="0.01">
+            </div>
+            <button id="add-account-btn">Crear Cuenta ✨</button>
 
-        <div class="input-group">
-            <label for="current-lot">Lote de la operación actual:</label>
-            <input type="number" id="current-lot" placeholder="Ej. 0.5" step="0.01">
+            <div id="account-metrics">
+                <label for="select-account">Cuenta Activa:</label>
+                <select id="select-account"></select>
+                <div class="metrics-container">
+                    <div class="metric-item">
+                        <span>Balance Actual:</span>
+                        <span id="current-balance" class="metric-value">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>WR de Cuenta:</span>
+                        <span id="account-win-rate" class="metric-value">0%</span>
+                        <div id="win-rate-progress-container">
+                            <div id="win-rate-progress"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button id="reset-data" style="width: auto;">Reiniciar Datos (Todas las cuentas) ⚠️</button>
+            </div>
         </div>
 
-        <button id="add-lot">Agregar Lote y Actualizar</button>
+        <div class="content-container card">
+            <h1>Diario de Trading Multi-Cuenta 📈</h1>
+            <p>Gestiona múltiples cuentas y analiza tu rendimiento en cada una.</p>
 
-        <div id="results">
-        </div>
+            <div id="trade-form">
+                <h2>Registrar Nueva Operación 📝</h2>
+                <div class="column-flex">
+                    <div>
+                        <label for="trade-date">Fecha:</label>
+                        <input type="date" id="trade-date">
+                    </div>
+                    <div>
+                        <label for="trade-symbol">Símbolo:</label>
+                        <input type="text" id="trade-symbol" placeholder="Ej. EURUSD">
+                    </div>
+                    <div>
+                        <label for="trade-type">Tipo:</label>
+                        <select id="trade-type">
+                            <option value="buy">Compra ⬆️</option>
+                            <option value="sell">Venta ⬇️</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="trade-lot">Lote:</label>
+                        <input type="number" id="trade-lot" placeholder="Ej. 1.26" step="0.01">
+                    </div>
+                    <div>
+                        <label for="trade-pnl">P/L ($):</label>
+                        <input type="number" id="trade-pnl" placeholder="Ej. 125.50" step="0.01">
+                    </div>
+                    <div>
+                        <label for="trade-exit">Resultado:</label>
+                        <select id="trade-exit">
+                            <option value="win">Ganancia ✅</option>
+                            <option value="loss">Pérdida ❌</option>
+                            <option value="breakeven">Break-Even ➖</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="add-trade-btn">Agregar Operación a la Cuenta ➕</button>
+            </div>
 
-        <div id="storage-info">
-            <p><strong>Totales guardados:</strong></p>
-            <p>Operaciones: <span id="num-ops-display">0</span></p>
-            <p>Suma de Lotes: <span id="sum-lots-display">0</span></p>
-            <button id="reset-data" style="width: auto; padding: 5px 10px;">Reiniciar datos</button>
+            <div id="results">
+                <h2>Análisis de la Cuenta 🔍</h2>
+                <div id="consistency-by-symbol">
+                    <h3>Análisis de Consistencia por Símbolo ⚖️</h3>
+                </div>
+                <div id="analysis-summary">
+                    </div>
+            </div>
+            
+            <div id="trade-log">
+                <h2>Historial de Operaciones 📜</h2>
+                <div id="trade-list"></div>
+            </div>
         </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #b0b0b0;">
+        <p>¿Te ha sido útil esta herramienta? <a href="https://paypal.me/necesitoverdes" target="_blank" style="color: #00bcd4; text-decoration: none; font-weight: 500;">Apoya el desarrollo</a>.</p>
     </div>
 
     <script>
-        const currentLotInput = document.getElementById('current-lot');
-        const addLotButton = document.getElementById('add-lot');
-        const resetDataButton = document.getElementById('reset-data');
-        const resultsDiv = document.getElementById('results');
-        const numOpsDisplay = document.getElementById('num-ops-display');
-        const sumLotsDisplay = document.getElementById('sum-lots-display');
+        const accountNameInput = document.getElementById('account-name');
+        const accountBalanceInput = document.getElementById('account-balance');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const selectAccountDropdown = document.getElementById('select-account');
+        const currentBalanceSpan = document.getElementById('current-balance');
+        const accountWinRateSpan = document.getElementById('account-win-rate');
+        const winRateProgressBar = document.getElementById('win-rate-progress');
 
-        // Función para cargar datos desde el almacenamiento local
-        function loadData() {
-            let numOps = parseFloat(localStorage.getItem('numOps')) || 0;
-            let sumLots = parseFloat(localStorage.getItem('sumLots')) || 0;
-            updateDisplay(numOps, sumLots);
-            return { numOps, sumLots };
+        const tradeDateInput = document.getElementById('trade-date');
+        const tradeSymbolInput = document.getElementById('trade-symbol');
+        const tradeTypeInput = document.getElementById('trade-type');
+        const tradeLotInput = document.getElementById('trade-lot');
+        const tradePnlInput = document.getElementById('trade-pnl');
+        const tradeExitInput = document.getElementById('trade-exit');
+        const addTradeBtn = document.getElementById('add-trade-btn');
+        const resetDataBtn = document.getElementById('reset-data');
+
+        const consistencyBySymbolDiv = document.getElementById('consistency-by-symbol');
+        const wrBySymbolDiv = document.getElementById('wr-by-symbol'); // Eliminar en la UI, pero mantener para el análisis
+        const wrByMonthDiv = document.getElementById('wr-by-month'); // Eliminar en la UI, pero mantener para el análisis
+        const tradeListDiv = document.getElementById('trade-list');
+
+        function loadAccounts() {
+            const accounts = JSON.parse(localStorage.getItem('tradingAccounts')) || [];
+            updateAccountDropdown(accounts);
+            return accounts;
         }
 
-        // Función para guardar datos en el almacenamiento local
-        function saveData(numOps, sumLots) {
-            localStorage.setItem('numOps', numOps);
-            localStorage.setItem('sumLots', sumLots);
-            updateDisplay(numOps, sumLots);
+        function saveAccounts(accounts) {
+            localStorage.setItem('tradingAccounts', JSON.stringify(accounts));
         }
 
-        // Función para actualizar la visualización de los totales
-        function updateDisplay(numOps, sumLots) {
-            numOpsDisplay.textContent = numOps;
-            sumLotsDisplay.textContent = sumLots.toFixed(2);
-        }
-
-        // Función para calcular y mostrar los resultados
-        function updateResults(numOps, sumLots, currentLot) {
-            // Manejar el caso de la primera operación (numOps es 0)
-            if (numOps === 0) {
-                resultsDiv.innerHTML = `
-                    <h2>Análisis</h2>
-                    <div class="result-item">
-                        <span>Tu primera operación:</span>
-                        <span>${currentLot.toFixed(2)} lotes</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Estado:</span>
-                        <span class="status ok">🟢 ¡Operación inicial establecida!</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Rango inicial:</span>
-                        <span>Se establecerá entre ${ (currentLot / 2).toFixed(2) } y ${ (currentLot * 2).toFixed(2) }</span>
-                    </div>
-                `;
+        function updateAccountDropdown(accounts) {
+            selectAccountDropdown.innerHTML = '';
+            if (accounts.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = 'No hay cuentas registradas';
+                selectAccountDropdown.appendChild(option);
+                selectAccountDropdown.disabled = true;
+                currentBalanceSpan.textContent = 'N/A';
+                accountWinRateSpan.textContent = '0%';
+                if (winRateProgressBar) winRateProgressBar.style.width = '0%';
+                updateAnalysis(null);
+                displayTrades([]);
+                return;
             } else {
-                // Lógica para operaciones subsiguientes
-                const avgLots = sumLots / numOps;
-                const minAllowed = avgLots / 2;
-                const maxAllowed = avgLots * 2;
-                let statusClass = '';
-                let statusText = '';
-
-                if (currentLot >= minAllowed && currentLot <= maxAllowed) {
-                    statusClass = 'ok';
-                    statusText = '🟢 ¡Lote en rango!';
-                } else {
-                    statusClass = 'error';
-                    statusText = '🔴 ¡Lote fuera de rango!';
-                }
-
-                resultsDiv.innerHTML = `
-                    <h2>Análisis</h2>
-                    <div class="result-item">
-                        <span>Lote Promedio:</span>
-                        <span>${avgLots.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Rango Mínimo:</span>
-                        <span>${minAllowed.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Rango Máximo:</span>
-                        <span>${maxAllowed.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="status ${statusClass}">${statusText}</span>
-                    </div>
-                `;
+                selectAccountDropdown.disabled = false;
             }
+            accounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                selectAccountDropdown.appendChild(option);
+            });
+            const lastSelectedId = localStorage.getItem('selectedAccountId');
+            if (lastSelectedId && accounts.some(acc => acc.id === lastSelectedId)) {
+                selectAccountDropdown.value = lastSelectedId;
+            } else if (accounts.length > 0) {
+                selectAccountDropdown.value = accounts[0].id;
+            }
+            const activeAccount = getActiveAccount();
+            updateAccountMetrics(activeAccount);
+            updateAnalysis(activeAccount);
+            displayTrades(activeAccount.trades);
         }
-        
-        // Función para mostrar el análisis al cargar la página si hay datos guardados
-        function showLastAnalysis() {
-            const { numOps, sumLots } = loadData();
+
+        function getActiveAccount() {
+            const accounts = JSON.parse(localStorage.getItem('tradingAccounts')) || [];
+            const selectedId = selectAccountDropdown.value;
+            return accounts.find(acc => acc.id === selectedId);
+        }
+
+        function updateAccountMetrics(account) {
+            if (!account) {
+                currentBalanceSpan.textContent = 'N/A';
+                currentBalanceSpan.classList.remove('positive', 'negative', 'neutral');
+                accountWinRateSpan.textContent = '0%';
+                if (winRateProgressBar) winRateProgressBar.style.width = '0%';
+                return;
+            }
+            const trades = account.trades;
+            const numOps = trades.length;
+            const currentBalance = account.initialBalance + trades.reduce((sum, trade) => sum + trade.pnl, 0);
+            
+            let winRate = '0';
             if (numOps > 0) {
-                const avgLots = sumLots / numOps;
-                const minAllowed = avgLots / 2;
-                const maxAllowed = avgLots * 2;
-                
-                resultsDiv.innerHTML = `
-                    <h2>Análisis Actual</h2>
-                    <div class="result-item">
-                        <span>Lote Promedio:</span>
-                        <span>${avgLots.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Rango Mínimo:</span>
-                        <span>${minAllowed.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Rango Máximo:</span>
-                        <span>${maxAllowed.toFixed(2)}</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="status ok">🟢 ¡Datos cargados!</span>
-                    </div>
-                `;
+                const winningTrades = trades.filter(trade => trade.result === 'win').length;
+                winRate = ((winningTrades / numOps) * 100).toFixed(0);
+                if (winRateProgressBar) winRateProgressBar.style.width = `${winRate}%`;
+            } else {
+                if (winRateProgressBar) winRateProgressBar.style.width = '0%';
             }
+
+            let balanceClass = 'neutral';
+            if (currentBalance > account.initialBalance) {
+                balanceClass = 'positive';
+            } else if (currentBalance < account.initialBalance) {
+                balanceClass = 'negative';
+            }
+            
+            currentBalanceSpan.textContent = `${currentBalance.toFixed(2)} US$`;
+            currentBalanceSpan.classList.remove('positive', 'negative', 'neutral');
+            currentBalanceSpan.classList.add(balanceClass);
+            accountWinRateSpan.textContent = `${winRate}%`;
         }
 
-        // Evento al hacer clic en "Agregar Lote y Actualizar"
-        addLotButton.addEventListener('click', () => {
-            const currentLot = parseFloat(currentLotInput.value);
-            if (isNaN(currentLot) || currentLot <= 0) {
-                alert('Por favor, introduce un lote válido.');
+        function updateAnalysis(account) {
+            if (!account) {
+                consistencyBySymbolDiv.innerHTML = '<h3>Análisis de Consistencia por Símbolo ⚖️</h3><p>Selecciona una cuenta para ver el análisis.</p>';
                 return;
             }
 
-            let { numOps, sumLots } = loadData();
-            updateResults(numOps, sumLots, currentLot);
+            const trades = account.trades;
+            const numOps = trades.length;
 
-            // Actualizamos los totales para la próxima operación
-            numOps += 1;
-            sumLots += currentLot;
-            saveData(numOps, sumLots);
+            if (numOps === 0) {
+                consistencyBySymbolDiv.innerHTML = '<h3>Análisis de Consistencia por Símbolo ⚖️</h3><p>Ingresa tu primera operación para iniciar el análisis.</p>';
+                return;
+            }
+            
+            const symbols = {};
+            trades.forEach(trade => {
+                if (!symbols[trade.symbol]) {
+                    symbols[trade.symbol] = { total: 0, lots: [] };
+                }
+                symbols[trade.symbol].total++;
+                symbols[trade.symbol].lots.push(trade.lot);
+            });
 
-            currentLotInput.value = ''; // Limpiamos el campo de entrada
+            consistencyBySymbolDiv.innerHTML = '<h3>Análisis de Consistencia por Símbolo ⚖️</h3>';
+            for (const symbol in symbols) {
+                const numOpsSymbol = symbols[symbol].lots.length;
+                const avgLots = symbols[symbol].lots.reduce((sum, lot) => sum + lot, 0) / numOpsSymbol;
+                const minAllowed = avgLots / 2;
+                const maxAllowed = avgLots * 2;
+                const lastLot = symbols[symbol].lots[symbols[symbol].lots.length - 1];
+                
+                let statusClass = 'neutral';
+                let statusEmoji = '⚠️';
+                let statusText = 'N/A (1ª operación)';
+
+                if (numOpsSymbol > 1) {
+                    if (lastLot > maxAllowed || lastLot < minAllowed) {
+                        statusClass = 'error';
+                        statusEmoji = '🔴';
+                        statusText = 'Fuera de rango';
+                    } else {
+                        statusClass = 'ok';
+                        statusEmoji = '🟢';
+                        statusText = 'En rango';
+                    }
+                }
+
+                const analysisHtml = `
+                    <div class="analysis-summary-item">
+                        <span>**${symbol}** (${numOpsSymbol} ops): Lote prom. ${avgLots.toFixed(2)} | Rango: ${minAllowed.toFixed(2)}-${maxAllowed.toFixed(2)} | Último lote: ${lastLot} | Estado: <span class="status ${statusClass}">${statusEmoji} ${statusText}</span></span>
+                    </div>
+                `;
+                consistencyBySymbolDiv.innerHTML += analysisHtml;
+            }
+        }
+
+        function displayTrades(trades) {
+            tradeListDiv.innerHTML = '';
+            if (trades.length === 0) {
+                tradeListDiv.innerHTML = '<p>No hay operaciones registradas para esta cuenta.</p>';
+                return;
+            }
+            trades.reverse().forEach((trade, index) => {
+                const tradeDiv = document.createElement('div');
+                tradeDiv.classList.add('trade-entry');
+                
+                let resultClass = 'neutral';
+                let resultEmoji = '➖';
+                if (trade.result === 'win') {
+                    resultClass = 'positive';
+                    resultEmoji = '✅';
+                } else if (trade.result === 'loss') {
+                    resultClass = 'negative';
+                    resultEmoji = '❌';
+                }
+                
+                tradeDiv.innerHTML = `
+                    <div class="trade-header">
+                        <span>Operación ${trades.length - index}</span>
+                        <span>**${trade.symbol}** (${trade.lot} lotes)</span>
+                    </div>
+                    <div class="trade-meta">
+                        Fecha: ${trade.date} | Tipo: ${trade.type} | Resultado: <span class="metric-value ${resultClass}">${resultEmoji} ${trade.result}</span> | P/L: ${trade.pnl.toFixed(2)} US$
+                    </div>
+                `;
+                tradeListDiv.appendChild(tradeDiv);
+            });
+        }
+        
+        addAccountBtn.addEventListener('click', () => {
+            const name = accountNameInput.value.trim();
+            const balance = parseFloat(accountBalanceInput.value);
+
+            if (!name || isNaN(balance) || balance <= 0) {
+                alert('Por favor, ingresa un nombre y un balance inicial válido.');
+                return;
+            }
+
+            const accounts = JSON.parse(localStorage.getItem('tradingAccounts')) || [];
+            const newAccount = {
+                id: 'acc-' + Date.now(),
+                name: name,
+                initialBalance: balance,
+                trades: []
+            };
+            accounts.push(newAccount);
+            saveAccounts(accounts);
+            
+            localStorage.setItem('selectedAccountId', newAccount.id);
+            location.reload();
+        });
+        
+        selectAccountDropdown.addEventListener('change', () => {
+            localStorage.setItem('selectedAccountId', selectAccountDropdown.value);
+            const account = getActiveAccount();
+            updateAccountMetrics(account);
+            updateAnalysis(account);
+            displayTrades(account.trades);
         });
 
-        // Evento al hacer clic en "Reiniciar datos"
-        resetDataButton.addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que quieres reiniciar todos los datos? Esto no se puede deshacer.')) {
-                saveData(0, 0);
-                resultsDiv.innerHTML = '';
+        addTradeBtn.addEventListener('click', () => {
+            const account = getActiveAccount();
+            if (!account) {
+                alert('Por favor, crea una cuenta primero.');
+                return;
+            }
+
+            const lotValue = parseFloat(tradeLotInput.value);
+            const symbolValue = tradeSymbolInput.value.trim().toUpperCase();
+            const dateValue = tradeDateInput.value;
+            const typeValue = tradeTypeInput.value;
+            const pnlValue = parseFloat(tradePnlInput.value);
+            const exitValue = tradeExitInput.value;
+            
+            if (isNaN(lotValue) || lotValue <= 0 || !symbolValue || !dateValue || isNaN(pnlValue)) {
+                alert('Por favor, completa los campos obligatorios: Lote, Símbolo, Fecha y P/L.');
+                return;
+            }
+
+            const newTrade = {
+                date: dateValue,
+                symbol: symbolValue,
+                type: typeValue,
+                lot: lotValue,
+                pnl: pnlValue,
+                result: exitValue
+            };
+
+            account.trades.push(newTrade);
+            const accounts = JSON.parse(localStorage.getItem('tradingAccounts')) || [];
+            const accountIndex = accounts.findIndex(acc => acc.id === account.id);
+            if (accountIndex !== -1) {
+                accounts[accountIndex] = account;
+            } else {
+                console.error("Cuenta activa no encontrada en el array de cuentas para guardar.");
+                return;
+            }
+            saveAccounts(accounts);
+            
+            updateAccountMetrics(account);
+            updateAnalysis(account);
+            displayTrades(account.trades);
+            
+            tradeDateInput.value = '';
+            tradeSymbolInput.value = '';
+            tradeLotInput.value = '';
+            tradePnlInput.value = '';
+            tradeTypeInput.value = 'buy';
+            tradeExitInput.value = 'win';
+        });
+
+        resetDataBtn.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres reiniciar TODOS los datos de TODAS tus cuentas? Esto no se puede deshacer.')) {
+                localStorage.removeItem('tradingAccounts');
+                localStorage.removeItem('selectedAccountId');
+                location.reload();
             }
         });
 
-        // Cargar los datos y mostrar el análisis al iniciar la página
-        showLastAnalysis();
-
+        const initialAccounts = JSON.parse(localStorage.getItem('tradingAccounts')) || [];
+        updateAccountDropdown(initialAccounts);
     </script>
-
-         <div style="text-align: center; margin-top: 30px; font-size: 0.8em; color: #888;">
-        <p>¿Te ha sido útil esta herramienta? <a href="https://paypal.me/necesitoverdes" target="_blank" style="color: #0070ba; text-decoration: none; font-weight: 500;">Apoya el desarrollo</a>.</p>
-    </div>
-
 </body>
 </html>
-
